@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>五年级数学评估 (Google Login)</title>
+
+<script>
+  MathJax = {
+    tex: { inlineMath: [['\\(', '\\)']] }
+  };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+
+<style>
+/* ====== 全局样式 ====== */
+body {
+  font-family: "ZCOOL KuaiLe", "Microsoft YaHei", sans-serif;
+  font-size: 18px; 
+  /* 背景图保留数学题的风格 */
+  background: url('https://png.pngtree.com/background/20210712/original/pngtree-cute-hand-drawn-style-math-education-blue-plaid-background-picture-image_1176978.jpg') no-repeat center center fixed;
+  background-size: cover;
+  min-height: 100vh;
+  padding: 20px;
+  color: #333;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 主容器 (卡片风格) */
+#wrapper {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 30px;
+  border-radius: 25px;
+  max-width: 800px;
+  width: 100%;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  backdrop-filter: blur(5px);
+  border: 4px solid #fff;
+}
+
+h1 {
+  font-size: 2.2rem;
+  text-align: center;
+  margin-bottom: 25px;
+  color: #2c3e50;
+  text-shadow: 2px 2px 0px #FFD700;
+  font-weight: 900;
+}
+
+/* ====== 登录屏幕样式 ====== */
+#start-screen { text-align: center; padding: 10px; }
+
+.input-group {
+  margin-bottom: 25px;
+  background: #f0faff;
+  padding: 20px;
+  border-radius: 20px;
+  border: 2px dashed #4FACFE;
+  max-width: 500px;
+  margin: 0 auto 20px auto;
+}
+
+.input-group label {
+  display: block;
+  font-size: 1.3rem;
+  margin-bottom: 12px;
+  font-weight: bold;
+  color: #4FACFE;
+}
+
+.input-group select {
+  width: 100%;
+  padding: 12px;
+  font-size: 1.2rem;
+  border: 2px solid #bce0fd;
+  border-radius: 12px;
+  outline: none;
+  font-family: inherit;
+}
+
+.google-btn-container {
+  background: #fffcf0;
+  padding: 25px;
+  border-radius: 20px;
+  border: 2px dashed #FFD700;
+  max-width: 500px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.google-label {
+  margin-bottom: 15px; font-weight:bold; color:#f39c12; font-size: 1.3rem;
+}
+
+#welcome-msg {
+  display: none;
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #d1f2eb;
+  border-radius: 15px;
+  color: #117a65;
+  font-weight: bold;
+  border: 2px solid #a3e4d7;
+  width: 100%;
+}
+
+#manualStartBtn {
+  display: none;
+  font-size: 1.5rem;
+  padding: 12px 40px;
+  background: #2ecc71;
+  color: white;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  margin-top: 20px;
+  font-weight: bold;
+  box-shadow: 0 5px 0 #219a52;
+  font-family: inherit;
+}
+#manualStartBtn:active { transform: translateY(4px); box-shadow: 0 2px 0 #219a52; }
+
+/* ====== 测验内容样式 ====== */
+#quiz-content { display: none; }
+
+#student-info-display {
+  text-align: right; 
+  font-size: 1.1rem; 
+  color: #555;
+  margin-bottom: 15px; 
+  border-bottom: 2px dashed #eee; 
+  padding-bottom: 10px;
+  font-weight: bold;
+}
+
+#q-index {
+  font-size: 1.4rem;
+  margin-bottom: 15px;
+  font-weight: bold;
+  color: #7f8c8d;
+}
+
+#question {
+  font-size: 1.8rem;
+  margin-bottom: 25px;
+  line-height: 1.5;
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+/* 选项按钮 */
+.opt {
+  font-size: 1.5rem;
+  padding: 15px 20px;
+  margin-bottom: 15px;
+  border-radius: 15px;
+  border: 3px solid #e0e0e0;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+.opt:hover {
+  background: #f0f8ff;
+  border-color: #4FACFE;
+  transform: translateX(5px);
+}
+.opt.correct {
+  background: #d4edda; border-color: #28a745; color: #155724;
+}
+.opt.correct::after { content: " ✅"; }
+
+.opt.wrong {
+  background: #f8d7da; border-color: #dc3545; color: #721c24;
+}
+.opt.wrong::after { content: " ❌"; }
+
+/* 底部控制栏 */
+.controls {
+  margin-top: 30px;
+  text-align: center;
+  border-top: 2px solid #eee;
+  padding-top: 20px;
+}
+
+#nextBtn {
+  font-size: 1.4rem;
+  padding: 12px 35px;
+  background: #4FACFE;
+  color: white;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  box-shadow: 0 5px 0 #2c80b9;
+  font-weight: bold;
+  font-family: inherit;
+}
+#nextBtn:active { transform: translateY(4px); box-shadow: 0 2px 0 #2c80b9; }
+#nextBtn:disabled {
+  background: #bdc3c7; box-shadow: none; cursor: not-allowed;
+  transform: none;
+}
+
+.score {
+  font-size: 1.6rem; margin-top: 15px; font-weight: 900; color: #f39c12;
+}
+
+/* 结果页样式 */
+.final-score-big {
+   font-size: 4rem; margin: 20px 0; color: #2ecc71;
+   font-weight: 900; text-shadow: 2px 2px 0 #a3e4d7;
+}
+.result-box {
+   padding: 15px; border-radius: 10px; font-size: 1.2rem; margin: 20px auto;
+}
+.result-success { background:#eafaf1; border: 2px solid #2ecc71; color: #2ecc71; }
+.result-error { background:#fdedec; border: 2px solid #e74c3c; color: #e74c3c; }
+
+</style>
+</head>
+<body>
+
+<div id="wrapper">
+  <h1>五年级数学评估</h1>
+
+  <div id="start-screen">
+      <div class="input-group">
+          <label for="student-class">步骤 1: 选择班级</label>
+          <select id="student-class">
+              <option value="">-- 请选择班级 --</option>
+              <option value="5M">5M</option>
+              <option value="5K">5K</option>
+              <option value="5B">5B</option>
+              <option value="5H">5H</option>
+              <option value="5J">5J</option>
+          </select>
+      </div>
+
+      <div class="google-btn-container">
+          <label class="google-label">步骤 2: Google 账号登录</label>
+          
+          <div id="g_id_onload"
+               data-client_id="1006856013626-uk3eq5tchv9t65gqosb0k6rst7hi1eeb.apps.googleusercontent.com"
+               data-callback="handleCredentialResponse"
+               data-auto_prompt="false">
+          </div>
+          
+          <div class="g_id_signin"
+               data-type="standard"
+               data-size="large"
+               data-theme="filled_blue"
+               data-text="sign_in_with"
+               data-shape="pill"
+               data-logo_alignment="left">
+          </div>
+
+          <div id="welcome-msg"></div>
+          <button id="manualStartBtn">开始作答! 🚀</button>
+      </div>
+  </div>
+
+  <div id="quiz-content">
+      <div id="student-info-display"></div>
+      <div id="q-index">第 <span id="cur">1</span> / <span id="total">0</span> 题</div>
+      <div id="question"></div>
+      <div id="options"></div>
+      
+      <div class="controls">
+        <button id="nextBtn" disabled>下一题 ➜</button>
+        <div class="score" id="score">得分: 0</div>
+      </div>
+  </div>
+</div>
+
+<script>
+// ====== Google Apps Script URL (不用改) ======
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzBFw5qn4_L8TuqOs6_08kzwqJCrxiUOkqgKTpyUtIMI2P5gE5DUFC0dSCD2Yqh0ZH80w/exec";
+
+// ====== 题库数据 (30题) ======
+// 格式: ID,题目 内容 A. xxx B. xxx,答案
+const rawData = `
+1,把 605 040 写成文字。 A. 六十五万零四十 B. 六十万五千零四十 C. 六十万五千四百 D. 六十五万零四百,B
+2,在数目 392 158 中，数字 9 的数位是什么？ A. 万位 B. 千位 C. 90 000 D. 9 000,A
+3,以下哪项是 417 500 的分析式？ A. 400 000 + 10 000 + 7 000 + 500 B. 4 个十万 + 1 个万 + 7 个千 + 5 个百 C. 400 000 + 10 000 + 700 + 50 D. 4 个十万 + 7 个万 + 1 个千 + 5 个百,A
+4,哪个数目的十万位近似值是 800 000？ A. 749 999 B. 851 000 C. 782 145 D. 890 000,C
+5,245 890 与 245 900 之间相差多少？ A. 10 B. 100 C. 1 000 D. 10 000,A
+6,把 549 612 写成万位近似值。 A. 540 000 B. 550 000 C. 549 000 D. 500 000,B
+7,完成以下数列：120 500, 121 500, (   ), 123 500 A. 122 000 B. 122 500 C. 122 550 D. 121 600,B
+8,以下哪个数列是逆序排列？ A. 210 400, 210 500, 210 600, 210 700 B. 582 100, 582 000, 581 900, 581 800 C. 100 000, 101 000, 102 000, 103 000 D. 350 000, 360 000, 350 000, 360 000,B
+9,\\(145\\,300 + 23\\,450 + 8\\,120 =\\) A. 175 660 B. 176 870 C. 168 750 D. 185 320,B
+10,计算 \\(800\\,000 - 245\\,100 - 13\\,900\\) 的差。 A. 541 000 B. 550 100 C. 540 000 D. 531 000,A
+11,\\(3\\,412 \\times 25 =\\) A. 85 300 B. 84 200 C. 85 000 D. 75 300,A
+12,\\(215 \\times 1\\,000 =\\) A. 21 500 B. 215 000 C. 2 150 000 D. 2 015 000,B
+13,\\(486\\,720 \\div 12 =\\) A. 40 560 B. 45 060 C. 40 060 D. 4 560,A
+14,\\(525\\,000 \\div 100 =\\) A. 5 250 B. 52 500 C. 525 D. 50 250,A
+15,哪项算式的积最大？ A. \\(12\\,345 \\times 5\\) B. \\(10\\,000 \\times 6\\) C. \\(5\\,432 \\times 9\\) D. \\(20\\,000 \\times 4\\),D
+16,\\(98\\,500 - 32\\,140 =\\) (把答案写成万位近似值) A. 60 000 B. 66 000 C. 70 000 D. 66 360,C
+17,\\(45\\,000 + 1\\,200 \\times 4 =\\) A. 184 800 B. 49 800 C. 46 200 D. 50 000,B
+18,\\(300\\,000 - 50\\,000 \\div 5 =\\) A. 50 000 B. 250 000 C. 290 000 D. 299 000,C
+19,\\((120 + 80) \\times 3\\,000 =\\) A. 360 240 B. 600 000 C. 440 000 D. 243 000,B
+20,\\(24\\,000 \\div (12 - 4) =\\) A. 1 000 B. 2 000 C. 3 000 D. 4 000,C
+21,计算 \\(5 \\times 12\\,000 - 3\\,500\\)。 A. 56 500 B. 42 500 C. 60 000 D. 58 500,A
+22,\\(P \\times 8 = 56\\,000\\)。计算 P 的值。 A. 700 B. 7 000 C. 70 000 D. 6 000,B
+23,\\(72\\,000 \\div K = 80\\)。计算 K 的值。 A. 90 B. 900 C. 9 000 D. 90 000,B
+24,一家工厂在一天内生产了 15 200 个面包。工厂在一个星期内共生产了多少个面包？ A. 76 000 B. 91 200 C. 106 400 D. 152 000,C
+25,仓库里有 850 000 本书。工人把 35 000 本书运送到书店 A，再把 42 000 本书运送到书店 B。仓库里还剩下多少本书？ A. 773 000 B. 783 000 C. 770 000 D. 750 000,A
+26,快乐农场收获了 10 500 个苹果。农场主把苹果装进箱子，每个箱子装 50 个。需要多少个箱子？ A. 210 B. 200 C. 2 100 D. 21,A
+27,伟杰有 120 枚邮票，哈山的邮票数量是伟杰的 15 倍。他们两人共有多少枚邮票？ A. 1 800 B. 1 920 C. 2 000 D. 1 680,B
+28,一辆卡车可以载 4 500 公斤的货物。12 辆相同的卡车加上一辆载重 2 000 公斤的小货车，总共可以载多少公斤的货物？ A. 54 000 B. 56 000 C. 78 000 D. 58 000,B
+29,陈先生买了 5 台相同的电脑，共付了 RM 18 500。如果他想再买 2 台同样的电脑，需要再付多少钱？ A. RM 3 700 B. RM 7 400 C. RM 11 100 D. RM 7 000,B
+30,图书馆原有 50 000 本书。在这个月里，图书馆购入了 2 500 本新书，同时报废了 850 本旧书。现在图书馆有多少本书？ A. 51 650 B. 52 500 C. 53 350 D. 50 000,A
+`;
+
+// ====== 数据解析 (增强鲁棒性) ======
+const data = rawData.trim().split("\n").map((line, index) => {
+  const firstComma = line.indexOf(',');
+  const lastComma = line.lastIndexOf(',');
+  
+  if (firstComma === -1 || lastComma === -1 || firstComma === lastComma) return null;
+
+  const qid = line.substring(0, firstComma);
+  const fullContent = line.substring(firstComma + 1, lastComma).trim();
+  const answerChar = line.substring(lastComma + 1).trim().toUpperCase();
+
+  const optStart = fullContent.indexOf("A.");
+  const qtext = fullContent.slice(0, optStart).trim();
+  const optRaw = fullContent.slice(optStart);
+
+  // 分割 A. B. C. D. 
+  const optParts = optRaw.split(/\s(?=[A-D]\.\s)/);
+  if(optParts[0].startsWith("A. ")) optParts[0] = optParts[0]; // 保留A.
+
+  // 移除 "A. " 等前缀并清理空格
+  const opts = optParts.map(s => s.replace(/^[A-D]\.\s*/, "").trim());
+
+  return { 
+    q: qtext, 
+    options: opts, 
+    answer: {A:0, B:1, C:2, D:3}[answerChar] 
+  };
+}).filter(item => item !== null);
+
+// ====== 全局变量 ======
+let current = 0;
+let score = 0;
+let answered = false;
+let studentName = "";
+let studentClass = "";
+let studentEmail = "";
+
+// ====== DOM 元素 ======
+const startScreen = document.getElementById('start-screen');
+const quizContent = document.getElementById('quiz-content');
+const infoDisplay = document.getElementById('student-info-display');
+const classInput = document.getElementById('student-class');
+
+document.getElementById('total').textContent = data.length;
+
+// ====== 1. 登录与启动逻辑 ======
+
+function parseJwt (token) {
+    var base64Url = token.split('.')[1];
+    var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+}
+
+function handleCredentialResponse(response) {
+    console.log("Encoded JWT ID token: " + response.credential);
+    const responsePayload = parseJwt(response.credential);
+    studentName = responsePayload.name;
+    studentEmail = responsePayload.email;
+    
+    // 隐藏 Google 按钮，显示欢迎信息
+    document.querySelector('.g_id_signin').style.display = 'none';
+    const welcomeDiv = document.getElementById('welcome-msg');
+    welcomeDiv.style.display = 'block';
+    welcomeDiv.innerHTML = `🎉 欢迎, ${studentName}!<br><small>(${studentEmail})</small>`;
+    
+    checkAndStart();
+}
+
+function checkAndStart() {
+    const sClass = classInput.value;
+    if (sClass) {
+        studentClass = sClass;
+        setTimeout(startQuiz, 1000);
+    } else {
+        // 如果还没选班级，显示开始按钮
+        alert("登录成功！请选择班级以开始。");
+        const btn = document.getElementById('manualStartBtn');
+        btn.style.display = 'block';
+        btn.onclick = function() {
+            if(!classInput.value) {
+                alert("请先选择您的班级！");
+            } else {
+                studentClass = classInput.value;
+                startQuiz();
+            }
+        };
+    }
+}
+
+// 监听班级选择变化
+classInput.addEventListener('change', function() {
+    // 如果已经登录且按钮显示，用户选了班级后不需要自动开始，等待点击按钮
+});
+
+// ====== 2. 测验逻辑 ======
+function startQuiz() {
+    startScreen.style.display = 'none';
+    quizContent.style.display = 'block';
+    infoDisplay.textContent = `学生: ${studentName} (${studentClass})`; 
+    loadQuestion();
+}
+
+function loadQuestion(){
+  answered = false;
+  document.getElementById('nextBtn').disabled = true;
+  document.getElementById('nextBtn').textContent = "下一题 ➜";
+  
+  // 如果做完了，提交成绩
+  if(current >= data.length) {
+      submitToGoogleSheet();
+      return;
+  }
+
+  const q = data[current];
+  document.getElementById('question').innerHTML = q.q;
+  document.getElementById('cur').textContent = current + 1;
+  
+  const optsDiv = document.getElementById('options');
+  optsDiv.innerHTML = '';
+  
+  q.options.forEach((opt,i)=>{
+    const div = document.createElement('div');
+    div.className='opt';
+    div.innerHTML = opt;
+    div.addEventListener('click',()=>selectOption(div,i));
+    optsDiv.appendChild(div);
+  });
+  
+  if(current === data.length - 1) {
+      document.getElementById('nextBtn').textContent = "提交成绩 ✅";
+  }
+  
+  // 重新渲染数学公式
+  if(window.MathJax) MathJax.typesetPromise();
+}
+
+function selectOption(el, index){
+  if(answered) return;
+  answered = true;
+  const q = data[current];
+  const all = document.querySelectorAll('.opt');
+  
+  all.forEach((d,i)=>{ if(i === q.answer) d.classList.add('correct'); });
+  
+  if(index !== q.answer) {
+      el.classList.add('wrong'); 
+  } else {
+      score++;
+  }
+  
+  document.getElementById('score').textContent = '得分: ' + score;
+  document.getElementById('nextBtn').disabled = false;
+}
+
+document.getElementById('nextBtn').addEventListener('click', () => {
+  current++;
+  loadQuestion();
+});
+
+// ====== 3. 提交数据逻辑 ======
+function submitToGoogleSheet() {
+    quizContent.innerHTML = `
+        <div style="text-align:center; padding:50px;">
+            <h2 style="color:#f39c12; font-size: 2.5rem;">⏳ 正在提交成绩...</h2>
+            <p>请稍候，系统正在记录您的分数。</p>
+        </div>
+    `;
+
+    const formData = new URLSearchParams();
+    formData.append("name", studentName);
+    formData.append("class", studentClass);
+    formData.append("score", score);
+    formData.append("total", data.length);
+
+    fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.text())
+    .then(text => showFinalResult(true))
+    .catch(error => showFinalResult(false));
+}
+
+function showFinalResult(isSuccess) {
+    let msg = isSuccess ? 
+        `<div class="result-box result-success">✅ 成绩提交成功！做得好！</div>` : 
+        `<div class="result-box result-error">⚠️ 网络连接错误。请截图此页面发给老师。</div>`;
+
+    quizContent.innerHTML = `
+        <div style="text-align:center; padding: 30px;">
+            <h2 style="color:#2c3e50; font-size: 2.5rem;">恭喜完成, ${studentName}!🎉</h2>
+            <p style="font-size: 1.3rem;">班级: <strong>${studentClass}</strong></p>
+            <div class="final-score-big">
+                ${score} / ${data.length}
+            </div>
+            ${msg}
+            <button id="manualStartBtn" onclick="location.reload()" style="display:inline-block; margin-top:30px;">再做一次 🔄</button>
+        </div>
+    `;
+}
+</script>
+</body>
+</html>
