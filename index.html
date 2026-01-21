@@ -11,7 +11,6 @@
   };
 </script>
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 
 <style>
@@ -284,7 +283,6 @@ h1 {
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzBFw5qn4_L8TuqOs6_08kzwqJCrxiUOkqgKTpyUtIMI2P5gE5DUFC0dSCD2Yqh0ZH80w/exec";
 
 // ====== 题库数据 (30题) ======
-// 格式: ID,题目 内容 A. xxx B. xxx,答案
 const rawData = `
 1,把 605 040 写成文字。 A. 六十五万零四十 B. 六十万五千零四十 C. 六十万五千四百 D. 六十五万零四百,B
 2,在数目 392 158 中，数字 9 的数位是什么？ A. 万位 B. 千位 C. 90 000 D. 9 000,A
@@ -318,7 +316,7 @@ const rawData = `
 30,图书馆原有 50 000 本书。在这个月里，图书馆购入了 2 500 本新书，同时报废了 850 本旧书。现在图书馆有多少本书？ A. 51 650 B. 52 500 C. 53 350 D. 50 000,A
 `;
 
-// ====== 数据解析 (增强鲁棒性) ======
+// ====== 数据解析 ======
 const data = rawData.trim().split("\n").map((line, index) => {
   const firstComma = line.indexOf(',');
   const lastComma = line.lastIndexOf(',');
@@ -333,11 +331,9 @@ const data = rawData.trim().split("\n").map((line, index) => {
   const qtext = fullContent.slice(0, optStart).trim();
   const optRaw = fullContent.slice(optStart);
 
-  // 分割 A. B. C. D. 
   const optParts = optRaw.split(/\s(?=[A-D]\.\s)/);
-  if(optParts[0].startsWith("A. ")) optParts[0] = optParts[0]; // 保留A.
+  if(optParts[0].startsWith("A. ")) optParts[0] = optParts[0];
 
-  // 移除 "A. " 等前缀并清理空格
   const opts = optParts.map(s => s.replace(/^[A-D]\.\s*/, "").trim());
 
   return { 
@@ -353,7 +349,7 @@ let score = 0;
 let answered = false;
 let studentName = "";
 let studentClass = "";
-let studentEmail = "";
+let studentEmail = ""; // 全局邮箱变量
 
 // ====== DOM 元素 ======
 const startScreen = document.getElementById('start-screen');
@@ -378,7 +374,7 @@ function handleCredentialResponse(response) {
     console.log("Encoded JWT ID token: " + response.credential);
     const responsePayload = parseJwt(response.credential);
     studentName = responsePayload.name;
-    studentEmail = responsePayload.email;
+    studentEmail = responsePayload.email; // 获取并存储邮箱
     
     // 隐藏 Google 按钮，显示欢迎信息
     document.querySelector('.g_id_signin').style.display = 'none';
@@ -395,7 +391,6 @@ function checkAndStart() {
         studentClass = sClass;
         setTimeout(startQuiz, 1000);
     } else {
-        // 如果还没选班级，显示开始按钮
         alert("登录成功！请选择班级以开始。");
         const btn = document.getElementById('manualStartBtn');
         btn.style.display = 'block';
@@ -412,7 +407,7 @@ function checkAndStart() {
 
 // 监听班级选择变化
 classInput.addEventListener('change', function() {
-    // 如果已经登录且按钮显示，用户选了班级后不需要自动开始，等待点击按钮
+    // 逻辑保留
 });
 
 // ====== 2. 测验逻辑 ======
@@ -453,7 +448,6 @@ function loadQuestion(){
       document.getElementById('nextBtn').textContent = "提交成绩 ✅";
   }
   
-  // 重新渲染数学公式
   if(window.MathJax) MathJax.typesetPromise();
 }
 
@@ -468,7 +462,7 @@ function selectOption(el, index){
   if(index !== q.answer) {
       el.classList.add('wrong'); 
   } else {
-      score++;
+      score++; // 这里正确累加了答对的题数
   }
   
   document.getElementById('score').textContent = '得分: ' + score;
@@ -480,7 +474,7 @@ document.getElementById('nextBtn').addEventListener('click', () => {
   loadQuestion();
 });
 
-// ====== 3. 提交数据逻辑 ======
+// ====== 3. 提交数据逻辑 (核心修改处) ======
 function submitToGoogleSheet() {
     quizContent.innerHTML = `
         <div style="text-align:center; padding:50px;">
@@ -491,9 +485,15 @@ function submitToGoogleSheet() {
 
     const formData = new URLSearchParams();
     formData.append("name", studentName);
+    formData.append("email", studentEmail); // 修改1: 发送邮箱
     formData.append("class", studentClass);
-    formData.append("score", score);
-    formData.append("total", data.length);
+    
+    // 修改2: 计算百分比分数 (例如 80)
+    let percentScore = Math.round((score / data.length) * 100);
+    formData.append("score", percentScore);
+    
+    // 修改3: 发送答对的题数 (例如 24) 供 GAS 代码读取
+    formData.append("correct", score); 
 
     fetch(SCRIPT_URL, {
         method: 'POST',
